@@ -25,6 +25,7 @@ class HashTable:
         # Your code here
         self.capacity = capacity
         self.table = [None] * self.capacity
+        self.number_of_items = 0
 
     def get_num_slots(self):
         """
@@ -46,6 +47,7 @@ class HashTable:
         Implement this.
         """
         # Your code here
+        return self.number_of_items / self.capacity
 
     def fnv1(self, key):
         """
@@ -86,7 +88,31 @@ class HashTable:
         """
         # Your code here
         index = self.hash_index(key)
-        self.table[index] = (key, value)
+        current_node = self.table[index]
+
+        if current_node is not None:
+            # Search the linked list for a Node with the same KEY as the one we are inserting
+            while current_node is not None:
+                # If it exists, change the value of the node
+                if current_node.key == key:
+                    current_node.value = value
+                current_node = current_node.next
+            # if key is not found in the while loop
+            # the first item in the hash_array is the HEAD of the linked list which is the current_node
+            # Create a new hashTableEntry and add it to the HEAD of the linked list
+            new_node = HashTableEntry(key, value)
+            # set head as next node the new entry
+            new_node.next = current_node
+            # Make the new entry the new HEAD
+            self.table[index] = new_node
+            self.number_of_items += 1
+        else:
+            self.table[index] = HashTableEntry(key, value)
+            self.number_of_items += 1
+
+        # check load factor
+        if self.get_load_factor() > 0.7:
+            self.resize(self.capacity * 2)
 
     def delete(self, key):
         """
@@ -98,11 +124,25 @@ class HashTable:
         """
         # Your code here
         index = self.hash_index(key)
+        current_node = self.table[index]
+        prev = None
 
-        if not self.table[index]:
-            print('key is not found')
-
-        self.table[index] = None
+        # Search the linked list for a Node with the same KEY as the one we are inserting
+        if current_node is not None:
+            while current_node is not None:
+                # If it exists, change the value of the node
+                if current_node.key == key:
+                    # if current node is the key, assign the previous node NEXT to the current node NEXT
+                    if prev is not None:
+                        prev.next = current_node.next
+                    else:  # if this is head
+                        self.table[index] = current_node.next
+                    self.number_of_items -= 1
+                # move the nodes if key is not found
+                prev = current_node
+                current_node = current_node.next
+        else:
+            print('Key not found')
 
     def get(self, key):
         """
@@ -114,11 +154,16 @@ class HashTable:
         """
         # Your code here
         index = self.hash_index(key)
-        if self.table[index] is None:
-            return None
-
-        # print(self.table[index])
-        return self.table[index][1]
+        current_node = self.table[index]
+        # Search / Loop through the linked list at the hashed index
+        while current_node is not None:
+            # Compare the key to search to the keys in the nodes
+            if current_node.key == key:
+                # if you find it, return the value
+                return current_node.value
+            current_node = current_node.next
+        # if not, return None
+        return None
 
     def resize(self, new_capacity):
         """
@@ -127,7 +172,14 @@ class HashTable:
 
         Implement this.
         """
-        # Your code here
+        old_table = self.table
+        self.table = [None] * new_capacity
+        self.capacity = new_capacity
+
+        for item in old_table:
+            while item is not None:
+                self.put(item.key, item.value)
+                item = item.next
 
 
 if __name__ == "__main__":
