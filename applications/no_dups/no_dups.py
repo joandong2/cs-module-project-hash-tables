@@ -1,5 +1,3 @@
-
-
 def no_dups(s):
     # Your code here
     dict = {}
